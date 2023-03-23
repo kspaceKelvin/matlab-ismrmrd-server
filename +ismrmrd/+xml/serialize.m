@@ -55,7 +55,7 @@ if isfield(header,'measurementInformation')
             node = docNode.createElement('measurementDependency');
             append_node(docNode,node,dep,'dependencyType');
             append_node(docNode,node,dep,'measurementID');
-            measurementInformationNode.appendChild(node)
+            measurementInformationNode.appendChild(node);
         end
     end
     
@@ -240,20 +240,23 @@ xml_doc = xmlwrite(docNode);
 end
 
 function append_user_parameter(docNode,subNode,values,name,tostr)
-
-for v = 1:length(values.(name))
-    n2 = docNode.createElement(name);
-    
-    append_node(docNode,n2,values.(name)(v),'name');
-    
-    if nargin > 4
-        append_node(docNode,n2,values.(name)(v),'value',tostr);
-    else
-        append_node(docNode,n2,values.(name)(v),'value');
+    if ~isfield(values, name)
+        return
     end
-    
-    subNode.appendChild(n2);
-end
+
+    for v = 1:length(values.(name))
+        n2 = docNode.createElement(name);
+
+        append_node(docNode,n2,values.(name)(v),'name');
+
+        if nargin > 4
+            append_node(docNode,n2,values.(name)(v),'value',tostr);
+        else
+            append_node(docNode,n2,values.(name)(v),'value');
+        end
+
+        subNode.appendChild(n2);
+    end
 end
 
     
