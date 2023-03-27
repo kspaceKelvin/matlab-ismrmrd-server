@@ -131,7 +131,7 @@ for enc = header.encoding(:)'
     append_node(docNode,node,enc,'trajectory');
 
     % sometimes the encoding has the fields, but they are empty
-    if isfield(enc,'trajectoryDescription')
+    if isfield(enc,'trajectoryDescription') && isstruct(enc.trajectoryDescription)
         if ~isempty(fieldnames(enc.trajectoryDescription))
             n2 = docNode.createElement('trajectoryDescription');
             append_node(docNode,n2,enc.trajectoryDescription,'identifier');
