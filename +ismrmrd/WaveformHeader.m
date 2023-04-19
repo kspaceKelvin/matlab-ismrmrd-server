@@ -44,7 +44,7 @@ classdef WaveformHeader
                         obj = arg;
                     elseif isa(arg,'uint8')
                         % Byte array (e.g. from serialized data)
-                        deserialize(obj,arg);
+                        obj = deserialize(obj,arg);
                     else
                         % Unknown type
                         error('Unsupported constructor with input class %s', class(arg))
