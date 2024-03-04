@@ -6,6 +6,7 @@ classdef server < handle
         log            = [];
         savedata       = false;
         savedataFolder = '';
+        cleanupWarning = [];
     end
 
     methods
@@ -20,34 +21,44 @@ classdef server < handle
             obj.log            = log;
             obj.savedata       = savedata;
             obj.savedataFolder = savedataFolder;
+
+            % Temporarily disable warning from tcpserver:
+            %   Warning: The specified amount of data was not returned within the Timeout period for 'read'.
+            %   'tcpserver' unable to read any data. For more information on possible reasons, see tcpserver Read Warnings. 
+            ws = warning('off', 'transportlib:client:ReadWarning');
+            obj.cleanupWarning = onCleanup(@(x) warning(ws));
         end
 
         function serve(obj)
             while true
                 try
-                    obj.tcpHandle = tcpip('0.0.0.0',          obj.port, ...
-                                          'NetworkRole',      'server', ...
-                                          'InputBufferSize',  32 * 2^20 , ...
-                                          'OutputBufferSize', 32 * 2^20, ...
-                                          'Timeout',          3000);  %#ok<TNMLP>  Consider moving toolbox function TCPIP out of the loop for better performance
+                    obj.tcpHandle = tcpserver('0.0.0.0', obj.port, 'Timeout', 60*60);
                     obj.log.info('Waiting for client to connect to this host on port : %d', obj.port);
-                    fopen(obj.tcpHandle);
-                    obj.log.info('Accepting connection from: %s:%d', obj.tcpHandle.RemoteHost, obj.tcpHandle.RemotePort);
                     handle(obj);
-                    flushoutput(obj.tcpHandle);
-                    fclose(obj.tcpHandle);
+                catch ME
+                    obj.log.error(sprintf('%s\nError in %s (%s) (line %d)', ME.message, ME.stack(1).('name'), ME.stack(1).('file'), ME.stack(1).('line')));
+                    if strcmp(ME.identifier, 'instrument:interface:tcpserver:cannotConnect')
+                        obj.log.error("tcpserver has a timeout of 60 seconds for broken connections -- pausing for 10 seconds")
+                        pause(10)
+                    end
+                end
+
+                % Clean up TCP session
+                if ~isempty(obj.tcpHandle)
+                    flush(obj.tcpHandle);
+    
+                    % Wait (up to 100 seconds) for session to normally close before force closing it
+                    for i = 1:1000
+                        if obj.tcpHandle.Connected
+                            obj.log.info('TCP session is still connected... waiting')
+                            pause(0.1)
+                        else
+                            break
+                        end
+                    end
                     delete(obj.tcpHandle);
                     obj.tcpHandle = [];
-                catch ME
-                    if ~isempty(obj.tcpHandle)
-                        fclose(obj.tcpHandle);
-                        delete(obj.tcpHandle);
-                        obj.tcpHandle = [];
-                    end
-
-                    obj.log.error(sprintf('%s\nError in %s (%s) (line %d)', ME.message, ME.stack(1).('name'), ME.stack(1).('file'), ME.stack(1).('line')));
                 end
-                pause(1)
             end
         end
 
@@ -56,6 +67,7 @@ classdef server < handle
                 conn = connection(obj.tcpHandle, obj.log, obj.savedata, '', obj.savedataFolder);
                 config = next(conn);
                 metadata = next(conn);
+                obj.log.info('Accepting connection from: %s:%d', obj.tcpHandle.ClientAddress, obj.tcpHandle.ClientPort);
 
                 try
                     metadata = ismrmrd.xml.deserialize(metadata);
@@ -68,6 +80,8 @@ classdef server < handle
 
                 % Decide what program to use based on config
                 % As a shortcut, we accept the file name as text too.
+                % Note: When compiling, add an explicit case for custom configs
+                % in order to ensure it is included in the compiled binary
                 if strcmpi(config, "simplefft")
                     obj.log.info("Starting simplefft processing based on config")
                     recon = simplefft;
@@ -104,8 +118,13 @@ classdef server < handle
                 recon.process(conn, config, metadata, obj.log);
 
             catch ME
-                obj.log.error('[%s:%d] %s', ME.stack(2).name, ME.stack(2).line, ME.message);
-                rethrow(ME);
+                if ~strcmp(ME.identifier, 'connection:nodata')
+                    obj.log.error('[%s:%d] %s', ME.stack(2).name, ME.stack(2).line, ME.message);
+                    if obj.tcpHandle.Connected
+                        conn.send_close();
+                    end
+                    rethrow(ME);
+                end
             end
 
             if (conn.savedata)
@@ -150,7 +169,6 @@ classdef server < handle
 
         function delete(obj)
             if ~isempty(obj.tcpHandle)
-                fclose(obj.tcpHandle);
                 delete(obj.tcpHandle);
                 obj.tcpHandle = [];
             end

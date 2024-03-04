@@ -63,8 +63,7 @@ classdef connection < handle
                 out = [];
                 return
             end
-            out = uint8(fread(obj.tcpHandle, double(length), 'uint8'));
-            out = swapbytes(typecast(out,'uint8'));
+            out = uint8(read(obj.tcpHandle, double(length), 'uint8'))';
         end
 
         function obj = write(obj,bytes)
@@ -73,6 +72,11 @@ classdef connection < handle
 
         function [out,obj] = next(obj)
             identifier = read_mrd_message_identifier(obj);
+
+            if isempty(identifier)
+                throw(MException('connection:nodata', "Failed to read data"))
+            end
+
             switch identifier
                 case constants.MRD_MESSAGE_CONFIG_FILE
                     out = read_config_file(obj);
