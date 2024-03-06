@@ -8,6 +8,7 @@ classdef connection < handle
         savedataGroup
         mrdFilePath
         dset
+        buffer = uint8([]);
     end
 
     methods
@@ -58,12 +59,33 @@ classdef connection < handle
             end
         end
 
+        function out = peek(obj,length)
+            if (length == 0)
+                out = [];
+                return
+            end
+
+            if length <= numel(obj.buffer)
+                out = obj.buffer(1:length);
+            elseif length > numel(obj.buffer)
+                out = cat(1, obj.buffer, read(obj.tcpHandle, length-numel(obj.buffer), 'uint8')');
+                obj.buffer = out;
+            end
+        end
+
         function out = read(obj,length)
             if (length == 0)
                 out = [];
                 return
             end
-            out = uint8(read(obj.tcpHandle, double(length), 'uint8'))';
+
+            % If the connection was peeked before, then some data is in the buffer
+            if length <= numel(obj.buffer)
+                out = obj.buffer(1:length);
+                obj.buffer = obj.buffer(length+1:end);
+            elseif length > numel(obj.buffer)
+                out = cat(1, obj.buffer, read(obj.tcpHandle, length-numel(obj.buffer), 'uint8')');
+            end
         end
 
         function obj = write(obj,bytes)
@@ -86,6 +108,8 @@ classdef connection < handle
                     out = read_metadata(obj);
                 case constants.MRD_MESSAGE_CLOSE
                     out = read_close(obj);
+                case constants.MRD_MESSAGE_TEXT
+                    out = read_text(obj);
                 case constants.MRD_MESSAGE_ISMRMRD_ACQUISITION
                     out = read_acquisition(obj);
                 case constants.MRD_MESSAGE_ISMRMRD_WAVEFORM
@@ -104,6 +128,11 @@ classdef connection < handle
 
         function identifier = read_mrd_message_identifier(obj)
             identifier_bytes = read(obj,constants.SIZEOF_MRD_MESSAGE_IDENTIFIER);
+            identifier = typecast(identifier_bytes,'uint16');
+        end
+
+        function identifier = peek_mrd_message_identifier(obj)
+            identifier_bytes = peek(obj,constants.SIZEOF_MRD_MESSAGE_IDENTIFIER);
             identifier = typecast(identifier_bytes,'uint16');
         end
 

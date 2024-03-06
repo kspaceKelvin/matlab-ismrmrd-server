@@ -1,8 +1,6 @@
 classdef fire_mapVBVD < handle
     methods
         function process(obj, connection, config, metadata, logging)
-            logging.info('Config: \n%s', config);
-
             % Metadata should be MRD formatted header, but may be a string
             % if it failed conversion earlier
             try

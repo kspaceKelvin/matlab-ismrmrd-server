@@ -101,6 +101,31 @@ classdef server < handle
                     obj.log.info("Metadata is not a valid MRD XML structure.  Passing on metadata as text")
                 end
 
+                % Support additional config parameters passed through a JSON text message
+                if peek_mrd_message_identifier(conn) == constants.MRD_MESSAGE_TEXT
+                    configAdditionalText = next(conn);
+                    obj.log.info("Received additional config text: %s", configAdditionalText)
+                    try
+                        configAdditional = jsondecode(configAdditionalText);
+    
+                        if isfield(configAdditional, 'parameters')
+                            if isfield(configAdditional.parameters, 'config')
+                                obj.log.info("Changing config to: %s", configAdditional.parameters.config)
+                                config = configAdditional.parameters.config;
+                            end
+    
+                            if (isfield(configAdditional.parameters, 'customconfig') && ~isempty(configAdditional.parameters.customconfig))
+                                obj.log.info("Changing config to: %s", configAdditional.parameters.customconfig)
+                                config = configAdditional.parameters.customconfig;
+                            end
+                        end
+                    catch
+                        obj.log.error("Failed to parse as JSON")
+                    end
+                else
+                    configAdditional = config;
+                end
+
                 % Decide what program to use based on config
                 % As a shortcut, we accept the file name as text too.
                 % Note: When compiling, add an explicit case for custom configs
@@ -139,7 +164,7 @@ classdef server < handle
                         recon = obj.defaultConfig;
                     end
                 end
-                recon.process(conn, config, metadata, obj.log);
+                recon.process(conn, configAdditional, metadata, obj.log);
 
             catch ME
                 if ~strcmp(ME.identifier, 'connection:nodata')
