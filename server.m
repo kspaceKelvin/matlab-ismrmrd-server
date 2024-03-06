@@ -11,6 +11,14 @@ classdef server < handle
 
     methods
         function obj = server(port, log, savedata, savedataFolder)
+            if ~isnumeric(port)
+                port = str2double(port);
+            end
+
+            if ~islogical(savedata)
+                savedata = strcmpi(savedata, 'true');
+            end
+
             log.info('Starting server and listening for data at %s:%d', '0.0.0.0', port);
 
             if (savedata)
