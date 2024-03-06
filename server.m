@@ -6,11 +6,12 @@ classdef server < handle
         log            = [];
         savedata       = false;
         savedataFolder = '';
+        defaultConfig  = [];
         cleanupWarning = [];
     end
 
     methods
-        function obj = server(port, log, savedata, savedataFolder)
+        function obj = server(port, log, defaultConfig, savedata, savedataFolder)
             if ~isnumeric(port)
                 port = str2double(port);
             end
@@ -29,6 +30,20 @@ classdef server < handle
             obj.log            = log;
             obj.savedata       = savedata;
             obj.savedataFolder = savedataFolder;
+
+            % Pre-load the default module, giving it time to initialize or load files
+            try
+                log.info('Initializing default config: %s', defaultConfig);
+                if exist(defaultConfig, 'class')
+                    h = str2func(defaultConfig);
+                    obj.defaultConfig = h();
+                else
+                    throw(MException('server:invalidDefaultConfig', sprintf('defaultConfig ''%s'' is not a valid class', defaultConfig)))
+                end
+            catch ME
+                obj.log.error('[%s:%d] %s', ME.stack(2).name, ME.stack(2).line, ME.message);
+                rethrow(ME);
+            end
 
             % Temporarily disable warning from tcpserver:
             %   Warning: The specified amount of data was not returned within the Timeout period for 'read'.
@@ -117,10 +132,11 @@ classdef server < handle
                 else
                     if exist(config, 'class')
                         obj.log.info("Starting %s processing based on config", config)
-                        eval(['recon = ' config ';'])
+                        h = str2func(config);
+                        recon = h();
                     else
-                        obj.log.info("Unknown config '%s'.  Falling back to 'invertcontrast'", config)
-                        recon = invertcontrast;
+                        obj.log.info("Unknown config '%s'.  Falling back to '%s'", config, class(obj.defaultConfig))
+                        recon = obj.defaultConfig;
                     end
                 end
                 recon.process(conn, config, metadata, obj.log);

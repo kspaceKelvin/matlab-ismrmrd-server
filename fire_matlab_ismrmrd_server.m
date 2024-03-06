@@ -19,19 +19,25 @@ function fire_matlab_ismrmrd_server(varargin)
     end
 
     if nargin < 3
-        savedata = false;
+        defaultConfig = 'invertcontrast';
     else
-        savedata = varargin{3};
+        defaultConfig = varargin{3};
     end
 
     if nargin < 4
+        savedata = false;
+    else
+        savedata = varargin{4};
+    end
+
+    if nargin < 5
         savedataFolder = '';
     else
-        savedataFolder = varargin{4};
+        savedataFolder = varargin{5};
     end
 
     log = logging.createLog(logfile);
-    ismrmrd_server = server(port, log, savedata, savedataFolder);
+    ismrmrd_server = server(port, log, defaultConfig, savedata, savedataFolder);
     serve(ismrmrd_server);
 
 end
