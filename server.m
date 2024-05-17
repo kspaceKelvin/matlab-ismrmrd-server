@@ -168,8 +168,11 @@ classdef server < handle
 
             catch ME
                 if ~strcmp(ME.identifier, 'connection:nodata')
-                    obj.log.error('[%s:%d] %s', ME.stack(2).name, ME.stack(2).line, ME.message);
+                    cStr = cat(1, sprintf('%s\n', ME.message), arrayfun(@(x) sprintf('  In %s (line %d)\n', x.name, x.line), ME.stack, 'UniformOutput', false));
+                    str = [cStr{:}];
+                    obj.log.error(str);
                     if obj.tcpHandle.Connected
+                        conn.send_text(cat(2, 'ERROR   ', str))
                         conn.send_close();
                     end
                     rethrow(ME);
