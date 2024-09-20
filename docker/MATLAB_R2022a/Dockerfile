@@ -74,15 +74,6 @@ COPY license.lic /usr/local/MATLAB/R2022a/licenses
 # Standalone MATLAB licenses are usually tied to the network card MAC address.  If so, this must be
 # set during "docker run", otherwise an automatically generated MAC address will be used, e.g.:
 #   docker run --mac-address DE:AD:BE:EF:00:00 ...
-
-# Network MATLAB licenses are usually tied to the username/host.  The username can be set by
-# uncommenting the following line with the appropriate username:
-RUN useradd -ms /bin/bash kelvin
-RUN usermod -aG docker kelvin
-RUN echo 'export PATH="/usr/local/MATLAB/R2022a/bin/:$PATH"' > /home/kelvin/.bashrc
-RUN chown -R kelvin:kelvin /home/kelvin
-USER kelvin
-
 #
 # The hostname must be set during "docker run":
 #   docker run --hostname computername ...
@@ -104,9 +95,9 @@ CMD [ "/usr/local/MATLAB/R2022a/bin/matlab"]
 
 # Note: If a username-based MATLAB license file is used, then replace /root/ in the above commands
 # (3 instances) with /home/username/, where username is the licensed username.
-RUN mkdir -p /home/kelvin/MCRInstaller9.12
-COPY MATLAB_Runtime_R2022a_Update_1_glnxa64.zip /home/kelvin/MCRInstaller9.12/
-RUN su kelvin && /usr/local/MATLAB/R2022a/bin/matlab -r "compiler.internal.runtime.utils.setInstallerLocation('/home/kelvin/MCRInstaller9.12/MATLAB_Runtime_R2022a_Update_1_glnxa64.zip'); quit"
+# RUN mkdir -p /home/kelvin/MCRInstaller9.12
+# COPY MATLAB_Runtime_R2022a_Update_1_glnxa64.zip /home/kelvin/MCRInstaller9.12/
+# RUN /usr/local/MATLAB/R2022a/bin/matlab -r "compiler.internal.runtime.utils.setInstallerLocation('/home/kelvin/MCRInstaller9.12/MATLAB_Runtime_R2022a_Update_1_glnxa64.zip'); quit"
 
 # # --------------------------------------------------------------------------------------------------
 # #      Copy MATLAB MRD Server code
@@ -120,6 +111,14 @@ RUN cd /opt/code \
 RUN apt-get remove git -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Network MATLAB licenses are usually tied to the username/host.  The username can be set by
+# uncommenting the following line with the appropriate username:
+RUN useradd -ms /bin/bash kelvin
+RUN usermod -aG docker kelvin
+RUN echo 'export PATH="/usr/local/MATLAB/R2022a/bin/:$PATH"' > /home/kelvin/.bashrc
+RUN chown -R kelvin:kelvin /home/kelvin
+USER kelvin
 
 # # --------------------------------------------------------------------------------------------------
 # #      How to use this Docker image
@@ -139,7 +138,7 @@ RUN apt-get remove git -y \
 # #   cd /code/matlab-ismrmrd-server
 # #
 # # Build the standalone application and a Docker image:
-# #   res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m', 'TreatInputsAsNumeric', 'on')
+# #   res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m')
 # #   opts = compiler.package.DockerOptions(res, 'ImageName', 'fire-matlab-server')
 # #   compiler.package.docker(res, 'Options', opts)
 # #

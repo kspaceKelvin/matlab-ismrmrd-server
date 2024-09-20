@@ -23,7 +23,7 @@ fire_matlab_ismrmrd_server
 
 Compile the server as a standalone application and build the Docker image:
 ```
-res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m', 'TreatInputsAsNumeric', 'on')
+res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m')
 opts = compiler.package.DockerOptions(res, 'ImageName', 'fire-matlab-server')
 compiler.package.docker(res, 'Options', opts)
 ```
@@ -164,7 +164,7 @@ fire_matlab_ismrmrd_server
 
 Compile the server as a standalone application and build the Docker image:
 ```
-res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m', 'TreatInputsAsNumeric', 'on')
+res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m')
 opts = compiler.package.DockerOptions(res, 'ImageName', 'fire-matlab-server')
 compiler.package.docker(res, 'Options', opts)
 ```

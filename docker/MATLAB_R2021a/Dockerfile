@@ -129,7 +129,7 @@ RUN apt-get remove git -y \
 #   cd /code/matlab-ismrmrd-server
 #
 # Build the standalone application and a Docker image:
-#   res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m', 'TreatInputsAsNumeric', 'on')
+#   res = compiler.build.standaloneApplication('fire_matlab_ismrmrd_server.m')
 #   opts = compiler.package.DockerOptions(res, 'ImageName', 'fire-matlab-server')
 #   compiler.package.docker(res, 'Options', opts)
 #
