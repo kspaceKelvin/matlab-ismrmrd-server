@@ -11,6 +11,14 @@ classdef logging < handle
         function obj = createLog(filename)
             persistent thisObj;
             if isempty(thisObj) || ~isvalid(thisObj)
+                if ~isempty(filename)
+                    % Create parent folder for log file if it doesn't already exist
+                    logpath = fileparts(filename);
+                    if ~exist(logpath, 'dir')
+                        mkdir(logpath);
+                    end
+                    disp(cat(2, 'Writing to log file: ', filename))
+                end
                 thisObj = logging(filename);
             end
             obj = thisObj;
