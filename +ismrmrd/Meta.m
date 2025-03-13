@@ -135,19 +135,19 @@ classdef Meta
                             values{iVal} = str2double(values{iVal});
                         end
                     end
-
-                    if (numel(values) == 1)
-                        values = values{:};
-                    elseif all(cellfun(@(x) isnumeric(x), values))
-                        if numel(unique(cellfun(@(x) class(x), values, 'UniformOutput', false))) > 1
-                            values = cellfun(@(x) double(x), values);
-                        else
-                            values = cell2mat(values);
-                        end
-                    end
-        
-                    metaStruct.(fields{iField}) = values;
                 end
+
+                if (numel(values) == 1)
+                    values = values{:};
+                elseif all(cellfun(@(x) isnumeric(x), values))
+                    if numel(unique(cellfun(@(x) class(x), values, 'UniformOutput', false))) > 1
+                        values = cellfun(@(x) double(x), values);
+                    else
+                        values = cell2mat(values);
+                    end
+                end
+    
+                metaStruct.(fields{iField}) = values;
             end
         end
 
