@@ -129,7 +129,7 @@ classdef Meta
                     elseif all(((uint8(values{iVal}) >= uint8('0')) & (uint8(values{iVal}) <= uint8('9'))) | (uint8(values{iVal}) == uint8('-')))
                         values{iVal} = int64(str2double(values{iVal}));
                     % Floats may have decimals or exponents
-                    elseif all(((uint8(values{iVal}) >= uint8('0')) & (uint8(values{iVal}) <= uint8('9'))) | ((uint8(values{iVal}) == uint8('-')) | (uint8(values{iVal}) == uint8('.')) | (uint8(values{iVal}) == uint8('e'))))
+                    elseif all(((uint8(values{iVal}) >= uint8('0')) & (uint8(values{iVal}) <= uint8('9'))) | ((uint8(values{iVal}) == uint8('+')) | (uint8(values{iVal}) == uint8('-')) | (uint8(values{iVal}) == uint8('.')) | (uint8(values{iVal}) == uint8('e'))))
                         % UIDs are often numbers with multiple decimals and not valid numbers
                         if (sum(uint8(values{iVal}) == uint8('.')) < 2)
                             values{iVal} = str2double(values{iVal});
